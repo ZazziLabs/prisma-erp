@@ -23,16 +23,23 @@ export const getTours = async (): Promise<Tour[]> => {
 export const saveTour = async (tour: Partial<Tour>): Promise<Tour> => {
   if (!isConfigured) throw new Error("Database not configured");
 
-  if (tour.id) {
-    const { data, error } = await supabase.from('tours').update(tour).eq('id', tour.id).select().single();
+  // Remove o id de `tour` para inserção, mas mantém para atualização
+  const tourData = { ...tour };
+  if (!tourData.id) {
+    delete tourData.id;
+  }
+  
+  if (tourData.id) {
+    const { data, error } = await supabase.from('tours').update(tourData).eq('id', tourData.id).select().single();
     if (error) handleError(error);
     return data;
   } else {
-    const { data, error } = await supabase.from('tours').insert([tour]).select().single();
+    const { data, error } = await supabase.from('tours').insert([tourData]).select().single();
     if (error) handleError(error);
     return data;
   }
 };
+
 
 export const deleteTour = async (id: string): Promise<void> => {
     if (!isConfigured) throw new Error("Database not configured");
