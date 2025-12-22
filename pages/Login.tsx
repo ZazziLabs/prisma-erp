@@ -63,7 +63,7 @@ const Login = () => {
               <br />
               <span className="text-white/100">Possível.</span>
             </h1>
-            <p className="text-lg text-white/40 mb-12 max-w-[320px] leading-relaxed">
+            <p className="text-lg text-white/40 mb-12 max-w-[320px] leading-relaxed mx-auto text-center">
               A inteligência que simplifica sua gestão financeira.
             </p>
 
