@@ -6,12 +6,14 @@ import { DailySummary } from './pages/DailySummary';
 import { Closing } from './pages/Closing';
 import { History } from './pages/History';
 import { Reports } from './pages/Reports';
+import Login from './pages/Login';
 
 const App: React.FC = () => {
   return (
     <HashRouter>
       <Routes>
-        <Route path="/" element={<NewSale />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/new-sale" element={<NewSale />} />
         <Route path="/tours" element={<Tours />} />
         <Route path="/summary" element={<DailySummary />} />
         <Route path="/closing" element={<Closing />} />
