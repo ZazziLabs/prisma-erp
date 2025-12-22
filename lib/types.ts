@@ -60,6 +60,7 @@ export interface DailyClosing {
 
 // SQL Schema for reference (run this in Supabase SQL Editor):
 /*
+-- 1. Tabela de Passeios (Tours)
 create table tours (
   id uuid default gen_random_uuid() primary key,
   name text not null,
@@ -72,6 +73,7 @@ create table tours (
   created_at timestamptz default now()
 );
 
+-- 2. Tabela de Vendas (Sales)
 create table sales (
   id uuid default gen_random_uuid() primary key,
   created_at timestamptz default now(),
@@ -83,6 +85,7 @@ create table sales (
   status text default 'COMPLETED'
 );
 
+-- 3. Tabela de Itens da Venda (Sale Items)
 create table sale_items (
   id uuid default gen_random_uuid() primary key,
   sale_id uuid references sales(id) on delete cascade,
@@ -95,6 +98,7 @@ create table sale_items (
   unit_price_native numeric default 0
 );
 
+-- 4. Tabela de Fechamentos Diários (Daily Closings)
 create table daily_closings (
   id uuid default gen_random_uuid() primary key,
   created_at timestamptz default now(),
@@ -106,4 +110,15 @@ create table daily_closings (
   total_credit numeric default 0,
   sale_count int default 0
 );
+
+-- Habilita Row Level Security e cria políticas de acesso
+alter table tours enable row level security;
+alter table sales enable row level security;
+alter table sale_items enable row level security;
+alter table daily_closings enable row level security;
+
+create policy "Allow all for authenticated users" on tours for all to authenticated using (true);
+create policy "Allow all for authenticated users" on sales for all to authenticated using (true);
+create policy "Allow all for authenticated users" on sale_items for all to authenticated using (true);
+create policy "Allow all for authenticated users" on daily_closings for all to authenticated using (true);
 */
