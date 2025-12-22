@@ -1,21 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
 
+// As variáveis de ambiente são carregadas pelo Vite
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Valida se as variáveis de ambiente foram configuradas
 export const isConfigured = !!supabaseUrl && !!supabaseAnonKey;
 
-// A instância do Supabase é criada aqui.
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Cria a instância do cliente Supabase. Usamos 'any' para evitar erros de tipo
+// ao acessar 'global.headers', que é uma forma funcional de definir o token JWT.
+export const supabase: any = createClient(supabaseUrl, supabaseAnonKey);
 
-// Esta função atualiza o token de autenticação na instância global do Supabase.
-// Ela é chamada pelo hook useAuth sempre que o estado de login do Firebase muda.
+/**
+ * Define o token de autenticação JWT do Firebase para as requisições do Supabase.
+ * Isso garante que as políticas de segurança (RLS) do Supabase funcionem com
+ * a autenticação do Firebase.
+ * @param token - O token JWT do usuário logado no Firebase, ou null para limpar.
+ */
 export const setSupabaseAuth = (token: string | null) => {
   if (token) {
-    // Define o cabeçalho de autorização para todas as futuras requisições do Supabase.
+    // Adiciona o token ao cabeçalho de autorização para todas as futuras requisições
     supabase.global.headers['Authorization'] = `Bearer ${token}`;
   } else {
-    // Se o token for nulo (logout), removemos o cabeçalho para voltar a ser um cliente anônimo.
+    // Remove o token se o usuário fizer logout
     delete supabase.global.headers['Authorization'];
   }
 };
