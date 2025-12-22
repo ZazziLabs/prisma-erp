@@ -1,8 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { auth } from '../lib/firebase';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { LogIn, Mail, Sparkles, TrendingUp, Lock } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 
 const chartData = [
   { name: 'S1', value: 40 },
@@ -19,27 +21,41 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     setIsMounted(true);
-  }, []);
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        navigate('/new-sale');
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate('/new-sale');
     } catch (err: any) {
       setError("Credenciais inválidas. Tente novamente.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({ provider: 'google' });
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithRedirect(auth, provider);
+    } catch (error) {
+      console.error("Erro no login com Google:", error);
+      setError("Não foi possível fazer login com o Google.");
+    }
   };
 
   return (
