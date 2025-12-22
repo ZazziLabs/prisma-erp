@@ -20,17 +20,16 @@ const userFriendlyMessages: Record<string, string> = {
   '42501': 'Você não tem permissão para realizar esta ação.',
   
   // Postgres Errors
-  '23505': 'Já existe um registro com estes dados. Por favor, verifique os campos únicos.', // unique_violation
-  'PGRST116': 'O registro que você está tentando acessar não foi encontrado.', // 'The result contains 0 rows'
+  '23505': 'Já existe um registro com estes dados. Por favor, verifique os campos únicos.',
+  'PGRST116': 'O registro que você está tentando acessar não foi encontrado.',
 };
 
 /**
  * Manipulador de erros centralizado.
  * @param error O objeto de erro capturado.
  * @param customMessage Mensagem customizada para exibir ao usuário.
- * @returns Retorna `undefined` para que possa ser usado em retornos de função.
  */
-export const handleError = (error: any, customMessage?: string): undefined => {
+export const handleError = (error: any, customMessage?: string): never => {
   // 1. Loga o erro completo no console para debugging.
   console.error("API Error:", error);
 
@@ -54,5 +53,6 @@ export const handleError = (error: any, customMessage?: string): undefined => {
     variant: 'destructive',
   });
 
-  return undefined; // Permite fazer `return handleError(e)`
+  // Lança o erro para que possa ser capturado em try/catch
+  throw error;
 };

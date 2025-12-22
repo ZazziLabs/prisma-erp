@@ -41,6 +41,7 @@ export interface DailyClosing {
     total_debit: number;
     total_credit: number;
     sale_count: number;
+    user_id?: string; // Adicionado
 }
 
 export interface CartItem {
