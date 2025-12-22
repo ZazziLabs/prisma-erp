@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { supabase } from '../lib/supabaseClient';
+import { setSupabaseAuth } from '../lib/supabaseClient';
 
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -12,16 +12,16 @@ export const useAuth = () => {
       setUser(user);
       if (user) {
         const token = await user.getIdToken();
-        supabase.auth.setAuth(token);
+        setSupabaseAuth(token);
       } else {
-        supabase.auth.setAuth(null);
+        setSupabaseAuth(null);
       }
       setLoading(false);
     });
 
     return () => {
       unsubscribe();
-      supabase.auth.setAuth(null);
+      setSupabaseAuth(null);
     }
   }, []);
 
