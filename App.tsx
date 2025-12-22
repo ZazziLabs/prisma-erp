@@ -8,6 +8,7 @@ import { History } from './pages/History';
 import { Reports } from './pages/Reports';
 import Login from './pages/Login';
 import { useAuth } from './hooks/useAuth';
+import { Toaster } from './components/ui/Toaster';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading } = useAuth();
@@ -32,10 +33,9 @@ const App: React.FC = () => {
         <Route path="/history" element={<PrivateRoute><History /></PrivateRoute>} />
         <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
       </Routes>
+      <Toaster />
     </HashRouter>
   );
 };
 
 export default App;
-
-    
