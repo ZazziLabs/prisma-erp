@@ -31,9 +31,11 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
-      // Usa o Firebase para fazer login com e-mail e senha
+      // A autenticação é feita exclusivamente com o Firebase.
+      // Não usamos supabase.auth.signInWithPassword aqui.
       await signInWithEmailAndPassword(auth, email, password);
-      // O hook useAuth cuidará do redirecionamento e da configuração do token do Supabase
+      // Após o sucesso, o hook `useAuth` cuidará do redirecionamento
+      // e da configuração do token do Supabase.
     } catch (err: any) {
       setError("Credenciais inválidas. Tente novamente.");
     } finally {
@@ -45,9 +47,10 @@ const Login = () => {
     setError('');
     setLoading(true);
     try {
+        // O login com Google também é gerenciado 100% pelo Firebase.
         const provider = new GoogleAuthProvider();
         await signInWithPopup(auth, provider);
-        // O hook useAuth cuidará do resto
+        // O hook useAuth cuidará do resto (redirecionamento e token).
     } catch (err) {
         setError("Falha ao fazer login com Google.");
     } finally {

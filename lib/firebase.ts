@@ -1,6 +1,9 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
+// Este arquivo é o ponto de entrada para os serviços do Firebase na aplicação.
+// A autenticação é gerenciada exclusivamente pelo Firebase.
+
 // As variáveis import.meta.env são preenchidas pelo Vite durante o build
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -13,6 +16,8 @@ const firebaseConfig = {
 
 // Inicializa o Firebase com segurança
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+
+// Exporta a instância do Firebase Auth, que será usada em toda a aplicação.
 const auth = getAuth(app);
 
 export { auth };
