@@ -154,7 +154,7 @@ const Login = () => {
                     <div className="h-[140px] w-full">
                         {isMounted && (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={chartData}>
+                                <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                                     <Bar dataKey="value" radius={[6, 6, 6, 6]}>
                                         {chartData.map((entry, index) => (
                                             <Cell 
