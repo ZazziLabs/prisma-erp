@@ -49,7 +49,7 @@ const Login = () => {
   };
 
   const loginWithGoogle = async () => {
-    alert("Solicitação inválida. Servidor apresentando instabilidade.");
+    setError("Solicitação inválida. O servidor está apresentando instabilidade.");
     /* const provider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, provider);
