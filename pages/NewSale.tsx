@@ -359,8 +359,8 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
-      <div className="flex items-center gap-4 mb-4">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 space-y-4">
+      <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl">
           {tour.icon || '🌴'}
         </div>
@@ -370,7 +370,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
         </div>
       </div>
       
-      <div className="flex items-center justify-start gap-2">
+      <div className="flex items-center justify-end gap-2">
         <button
           onClick={() => onAddToCart(tour, 'adult')}
           className="flex items-center gap-1.5 py-2 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all text-sm font-medium text-blue-900 dark:text-blue-300"
