@@ -359,14 +359,16 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 space-y-4">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl">
-          {tour.icon || '🌴'}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{tour.name}</h3>
-          <p className="text-xs text-gray-500">{tour.type}</p>
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4 space-y-3">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl">
+                {tour.icon || '🌴'}
+            </div>
+            <div className="flex-1">
+                <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{tour.name}</h3>
+                <p className="text-xs text-gray-500">{tour.type}</p>
+            </div>
         </div>
       </div>
       
