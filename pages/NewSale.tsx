@@ -237,7 +237,7 @@ export const NewSale: React.FC = () => {
                   </div>
 
                   <div className="grid grid-cols-1 gap-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
-                    {item.qtyAdult > 0 && (
+                    {item.priceAdult > 0 && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm dark:text-gray-300 w-20">Adulto</span>
                         <span className="text-xs text-gray-500">R$ {item.priceAdult.toFixed(2)}</span>
@@ -248,7 +248,7 @@ export const NewSale: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {item.qtyChild > 0 && (
+                    {item.priceChild > 0 && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm dark:text-gray-300 w-20">Criança</span>
                         <span className="text-xs text-gray-500">R$ {item.priceChild.toFixed(2)}</span>
@@ -259,7 +259,7 @@ export const NewSale: React.FC = () => {
                         </div>
                       </div>
                     )}
-                    {item.qtyNative > 0 && (
+                    {item.priceNative > 0 && (
                       <div className="flex justify-between items-center">
                         <span className="text-sm dark:text-gray-300 w-20">Nativo</span>
                         <span className="text-xs text-gray-500">R$ {item.priceNative.toFixed(2)}</span>
@@ -341,7 +341,7 @@ export const NewSale: React.FC = () => {
               <p className="text-sm opacity-90">{cartItemCount} {cartItemCount === 1 ? 'item' : 'itens'}</p>
               <p className="text-2xl font-bold">R$ {cartTotal.toFixed(2)}</p>
             </div>
-            <Button onClick={() => setShowCart(true)} className="bg-white text-purple-600 hover:bg-gray-100">
+            <Button variant="secondary" onClick={() => setShowCart(true)}>
               Ver Carrinho
             </Button>
           </div>
