@@ -11,7 +11,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        headline: ['Space Grotesk', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
@@ -44,6 +44,10 @@ export default {
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',
           foreground: 'hsl(var(--destructive-foreground))',
+        },
+        success: {
+          DEFAULT: 'hsl(141, 76%, 42%)', // A bit darker green for text
+          light: 'hsl(141, 53%, 80%)', // #A9DFBF from proposal
         },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
