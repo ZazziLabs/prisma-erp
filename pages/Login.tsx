@@ -49,13 +49,14 @@ const Login = () => {
   };
 
   const loginWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
+    alert("Solicitação inválida. Servidor apresentando instabilidade.");
+    /* const provider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Erro no login com Google:", error);
       setError("Não foi possível fazer login com o Google.");
-    }
+    } */
   };
 
   return (
@@ -187,5 +188,3 @@ const Login = () => {
 };
 
 export default Login;
-
-    
