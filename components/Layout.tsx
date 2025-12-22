@@ -19,8 +19,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const menuItems = [
-    { icon: ShoppingBag, label: 'Nova Venda', path: '/' },
-    { icon: Box, label: 'Passeios', path: '/tours' },
+    { icon: ShoppingBag, label: 'Nova Venda', path: '/new-sale' },
+    { icon: Box, label: 'Adicionar Pacotes', path: '/tours' },
     { icon: BarChart2, label: 'Resumo do Dia', path: '/summary' },
     { icon: Lock, label: 'Fechamento', path: '/closing' },
     { icon: Folder, label: 'Histórico', path: '/history' },

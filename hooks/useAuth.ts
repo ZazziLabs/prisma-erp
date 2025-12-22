@@ -1,37 +1,29 @@
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { setSupabaseAuth } from '../lib/supabaseClient';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 
-// Este hook é o ponto central que gerencia o estado de autenticação do usuário.
-// Ele utiliza exclusivamente o Firebase Auth como provedor de identidade.
 export const useAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Monitora as mudanças de estado de autenticação do Firebase.
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setUser(user);
-      if (user) {
-        // Se o usuário estiver logado no Firebase, obtém o token JWT dele.
-        const token = await user.getIdToken();
-        // Em seguida, configura o cliente Supabase para usar esse token em todas as requisições ao banco de dados.
-        // Isso "autentica" o Supabase usando a sessão do Firebase.
-        setSupabaseAuth(token);
-      } else {
-        // Se o usuário fizer logout no Firebase, remove o token do cliente Supabase.
-        setSupabaseAuth(null);
-      }
+    // Verifica sessão atual do Supabase
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Função de limpeza que é executada quando o componente é desmontado.
+    // Monitora mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+      }
+    );
+
     return () => {
-      unsubscribe();
-      // Garante que o token seja limpo ao sair.
-      setSupabaseAuth(null);
-    }
+      subscription.unsubscribe();
+    };
   }, []);
 
   return { user, loading };
