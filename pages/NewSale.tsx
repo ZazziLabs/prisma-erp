@@ -321,7 +321,7 @@ export const NewSale: React.FC = () => {
             <p className="text-sm">Cadastre produtos na aba Adicionar Pacotes</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {tours.map(tour => (
               <ProductCard 
                 key={tour.id} 
@@ -359,39 +359,38 @@ interface ProductCardProps {
 
 const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm overflow-hidden flex flex-col">
-      <div className="p-4 flex-grow">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl">
-            {tour.icon || '🌴'}
-          </div>
-          <div className="flex-1">
-            <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{tour.name}</h3>
-            <p className="text-xs text-gray-500">{tour.type}</p>
-          </div>
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
+      <div className="flex items-center gap-4 mb-4">
+        <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl">
+          {tour.icon || '🌴'}
+        </div>
+        <div className="flex-1">
+          <h3 className="font-bold text-gray-900 dark:text-white leading-tight">{tour.name}</h3>
+          <p className="text-xs text-gray-500">{tour.type}</p>
         </div>
       </div>
-      <div className="bg-gray-50 dark:bg-gray-800/50 p-2 space-y-2">
+      
+      <div className="flex items-center justify-start gap-2">
         <button
           onClick={() => onAddToCart(tour, 'adult')}
-          className="w-full flex justify-between items-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all text-left"
+          className="flex items-center gap-1.5 py-2 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all text-sm font-medium text-blue-900 dark:text-blue-300"
         >
-          <span className="text-sm font-medium text-blue-900 dark:text-blue-300">👨 Adulto</span>
-          <span className="text-sm font-bold text-blue-700 dark:text-blue-400">R$ {tour.price_adult.toFixed(2)}</span>
+          <span>👨</span>
+          <span>Adulto</span>
         </button>
         <button
           onClick={() => onAddToCart(tour, 'child')}
-          className="w-full flex justify-between items-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg hover:bg-green-100 dark:hover:bg-green-900/30 transition-all text-left"
+          className="flex items-center gap-1.5 py-2 px-3 bg-green-50 dark:bg-green-900/20 rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 transition-all text-sm font-medium text-green-900 dark:text-green-300"
         >
-          <span className="text-sm font-medium text-green-900 dark:text-green-300">👶 Criança</span>
-          <span className="text-sm font-bold text-green-700 dark:text-green-400">R$ {tour.price_child.toFixed(2)}</span>
+          <span>👶</span>
+          <span>Criança</span>
         </button>
         <button
           onClick={() => onAddToCart(tour, 'native')}
-          className="w-full flex justify-between items-center p-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all text-left"
+          className="flex items-center gap-1.5 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all text-sm font-medium text-amber-900 dark:text-amber-300"
         >
-          <span className="text-sm font-medium text-amber-900 dark:text-amber-300">🏝️ Nativo</span>
-          <span className="text-sm font-bold text-amber-700 dark:text-amber-400">R$ {tour.price_native.toFixed(2)}</span>
+          <span>🏝️</span>
+          <span>Nativo</span>
         </button>
       </div>
     </div>
