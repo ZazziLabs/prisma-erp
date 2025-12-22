@@ -58,7 +58,7 @@ const Login = () => {
             </div>
 
             {/* Headline Estilo Claude */}
-            <h1 className="font-headline text-5xl sm:text-6xl font-medium tracking-tight mb-6 leading-[1.1]">
+            <h1 className="font-headline text-5xl sm:text-6xl font-medium tracking-tight mb-6 leading-[1.1] text-center">
               Impossível?
               <br />
               <span className="text-white/100">Possível.</span>
@@ -171,3 +171,5 @@ const Login = () => {
 };
 
 export default Login;
+
+    
