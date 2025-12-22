@@ -1,10 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithRedirect } from 'firebase/auth';
+import { supabase } from '../lib/supabaseClient';
+import { auth } from '../lib/firebase'; // Importa a autenticação do Firebase
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'; // Importa funções do Firebase
 import { LogIn, Mail, Sparkles, TrendingUp, Lock } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
-import { useNavigate } from 'react-router-dom';
 
 const chartData = [
   { name: 'S1', value: 40 },
@@ -21,74 +21,67 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     setIsMounted(true);
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (user) {
-        navigate('/new-sale');
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      // Usa o Firebase para fazer login com e-mail e senha
       await signInWithEmailAndPassword(auth, email, password);
-      navigate('/new-sale');
+      // O hook useAuth cuidará do redirecionamento e da configuração do token do Supabase
     } catch (err: any) {
       setError("Credenciais inválidas. Tente novamente.");
-      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
-    setError("Solicitação inválida. O servidor está apresentando instabilidade.");
-    /* const provider = new GoogleAuthProvider();
+    setError('');
+    setLoading(true);
     try {
-      await signInWithRedirect(auth, provider);
-    } catch (error) {
-      console.error("Erro no login com Google:", error);
-      setError("Não foi possível fazer login com o Google.");
-    } */
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        // O hook useAuth cuidará do resto
+    } catch (err) {
+        setError("Falha ao fazer login com Google.");
+    } finally {
+        setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen w-full bg-[#050505] font-body text-white selection:bg-[#820ad1]/30">
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         
-        {/* --- Lado Esquerdo: Formulário --- */}
         <div className="flex flex-col justify-center px-8 sm:px-12 lg:px-24 py-12">
           <div className="w-full max-w-[420px] mx-auto">
-            {/* Logo */}
-            <div className="flex items-center justify-center gap-2 mb-20">
+            <div className="flex items-center gap-2 mb-20">
                 <div className="w-10 h-10 bg-[#820ad1] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(130,10,209,0.3)]">
                     <Sparkles size={22} className="text-white" />
                 </div>
                 <span className="font-headline text-2xl font-bold tracking-tight">Prisma</span>
             </div>
 
-            {/* Headline Estilo Claude */}
-            <h1 className="font-headline text-5xl sm:text-6xl font-medium tracking-tight mb-6 leading-[1.1] text-center">
+            <h1 className="font-headline text-5xl sm:text-6xl font-medium tracking-tight mb-6 leading-[1.1]">
               Impossível?
               <br />
               <span className="text-white/100">Possível.</span>
             </h1>
-            <p className="text-lg text-white/40 mb-12 max-w-[320px] leading-relaxed mx-auto text-center">
+            <p className="text-lg text-white/40 mb-12 max-w-[320px] leading-relaxed">
               A inteligência que simplifica sua gestão financeira.
             </p>
 
-            {/* Caixa de Autenticação */}
             <div className="bg-[#0f0f0f] border border-white/5 p-8 rounded-[32px] shadow-2xl">
               <button
                 onClick={loginWithGoogle}
-                className="w-full flex items-center justify-center gap-3 bg-transparent border border-white/10 py-3.5 rounded-2xl hover:bg-white/5 transition-all duration-200 font-medium text-sm"
+                type="button"
+                className="w-full flex items-center justify-center gap-3 bg-transparent border border-white/10 py-3.5 rounded-2xl hover:bg-white/5 transition-all duration-200 font-medium text-sm text-white"
               >
                 <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" alt="Google" />
                 Continuar com Google
@@ -106,7 +99,7 @@ const Login = () => {
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-5 py-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:ring-1 focus:ring-[#820ad1] focus:border-[#820ad1] outline-none transition-all placeholder:text-white/20 text-sm"
+                      className="w-full px-5 py-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:ring-1 focus:ring-[#820ad1] focus:border-[#820ad1] outline-none transition-all placeholder:text-white/20 text-sm text-white"
                       placeholder="Digite seu e-mail"
                       required
                     />
@@ -114,7 +107,7 @@ const Login = () => {
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-5 py-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:ring-1 focus:ring-[#820ad1] focus:border-[#820ad1] outline-none transition-all placeholder:text-white/20 text-sm"
+                      className="w-full px-5 py-4 bg-white/[0.02] border border-white/10 rounded-2xl focus:ring-1 focus:ring-[#820ad1] focus:border-[#820ad1] outline-none transition-all placeholder:text-white/20 text-sm text-white"
                       placeholder="Sua senha"
                       required
                     />
@@ -130,27 +123,20 @@ const Login = () => {
               </form>
 
               {error && <p className="text-xs text-red-400 mt-4 text-center bg-red-400/10 py-2 rounded-lg">{error}</p>}
-
-              <p className="text-[10px] text-white/20 mt-10 text-center leading-relaxed">
-                Ao entrar, você concorda com nossos <span className="text-white/40 underline cursor-pointer">Termos</span> e <span className="text-white/40 underline cursor-pointer">Privacidade</span>.
-              </p>
             </div>
           </div>
         </div>
 
-        {/* --- Lado Direito: Visual (Imagem + Card Flutuante) --- */}
         <div className="hidden lg:flex flex-col items-center justify-center p-12 relative">
-            <div className="w-full max-w-2xl aspect-[4/5] rounded-[48px] overflow-hidden relative group shadow-2xl">
+            <div className="w-full max-w-2xl aspect-[4/5] rounded-[48px] overflow-hidden relative group shadow-2xl bg-[#111]">
                 <img 
                     src="https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop" 
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-80" 
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-60" 
                     alt="Success" 
                 />
                 
-                {/* Overlay Gradiente */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
 
-                {/* Card de Performance Flutuante */}
                 <div className="absolute bottom-10 left-10 right-10 bg-black/40 backdrop-blur-2xl border border-white/10 p-8 rounded-[32px] shadow-2xl transform transition-all duration-500 hover:-translate-y-2">
                     <div className="flex items-center justify-between mb-8">
                         <div>
@@ -162,16 +148,15 @@ const Login = () => {
                         </div>
                     </div>
                     
-                    {/* Container do Gráfico com dimensões fixas para evitar erro */}
-                    <div className="h-[140px] w-full min-w-0">
+                    <div className="h-[140px] w-full">
                         {isMounted && (
-                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                                <BarChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData}>
                                     <Bar dataKey="value" radius={[6, 6, 6, 6]}>
                                         {chartData.map((entry, index) => (
                                             <Cell 
                                                 key={`cell-${index}`} 
-                                                fill={index === 3 ? '#820ad1' : 'rgba(255,255,255,0.08)'} 
+                                                fill={index === 3 ? '#820ad1' : 'rgba(255,255,255,0.1)'} 
                                             />
                                         ))}
                                     </Bar>

@@ -23,8 +23,12 @@ export const getTours = async (): Promise<Tour[]> => {
 export const saveTour = async (tour: Partial<Tour>): Promise<Tour> => {
   if (!isConfigured) throw new Error("Database not configured");
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+
   // Remove o id de `tour` para inserção, mas mantém para atualização
-  const tourData = { ...tour };
+  const tourData = { ...tour, user_id: user.id };
   if (!tourData.id) {
     delete tourData.id;
   }
@@ -51,6 +55,9 @@ export const deleteTour = async (id: string): Promise<void> => {
 // Sales
 export const createSale = async (cart: CartItem[], payments: { method1: PaymentMethod, value1: number, method2: PaymentMethod | null, value2: number | null }): Promise<void> => {
   if (!isConfigured) throw new Error("Database not configured");
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
 
   const total = payments.value1 + (payments.value2 || 0);
   
@@ -59,7 +66,8 @@ export const createSale = async (cart: CartItem[], payments: { method1: PaymentM
     payment_method_1: payments.method1,
     payment_value_1: payments.value1,
     payment_method_2: payments.method2,
-    payment_value_2: payments.value2
+    payment_value_2: payments.value2,
+    user_id: user.id
   }]).select().single();
 
   if (saleError) handleError(saleError);
@@ -111,11 +119,14 @@ export const getSalesByDate = async (date: string): Promise<Sale[]> => {
 export const closeDay = async (summary: DailyClosing): Promise<void> => {
    if (!isConfigured) throw new Error("Database not configured");
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated");
+
    // Check if already closed
    const { data: existing } = await supabase.from('daily_closings').select('id').eq('date', summary.date).single();
    if (existing) throw new Error("Dia já fechado.");
 
-   const { error } = await supabase.from('daily_closings').insert([summary]);
+   const { error } = await supabase.from('daily_closings').insert([{...summary, user_id: user.id}]);
    if (error) handleError(error);
 };
 
