@@ -7,8 +7,9 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 // Valida se as variáveis de ambiente foram configuradas
 export const isConfigured = !!supabaseUrl && !!supabaseAnonKey;
 
-// Cria a instância do cliente Supabase. Usamos 'any' para evitar erros de tipo
-// ao acessar 'global.headers', que é uma forma funcional de definir o token JWT.
+// Cria a instância do cliente Supabase.
+// O tipo é definido como 'any' para permitir a manipulação direta dos cabeçalhos,
+// uma prática necessária para integrar com autenticação JWT de terceiros como o Firebase.
 export const supabase: any = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
