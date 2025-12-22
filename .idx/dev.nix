@@ -2,7 +2,7 @@
 # see: https://firebase.google.com/docs/studio/customize-workspace
 {pkgs}: {
   # Which nixpkgs channel to use.
-  channel = "stable-24.11"; # or "unstable"
+  channel = "stable-24.05"; # or "unstable"
   # Use https://search.nixos.org/packages to find packages
   packages = [
     pkgs.nodejs_20
@@ -16,7 +16,7 @@
     # Disabling because we are using prod backends right now
     detect = false;
     projectId = "demo-app";
-    services = ["auth" "firestore"];
+    services = [ "auth" "firestore" ];
   };
   idx = {
     # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
@@ -26,7 +26,7 @@
     workspace = {
       onCreate = {
         default.openFiles = [
-          "src/app/page.tsx"
+          "App.tsx"
         ];
       };
     };
@@ -35,7 +35,7 @@
       enable = true;
       previews = {
         web = {
-          command = ["npm" "run" "dev" "--" "--port" "$PORT" "--hostname" "0.0.0.0"];
+          command = ["npm" "run" "dev" "--" "--port" "$PORT" "--host" "0.0.0.0"];
           manager = "web";
         };
       };
