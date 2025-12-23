@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Tour, CartItem, PaymentMethod } from '../types';
 import { getTours, createSale } from '../services/api';
 import { Plus, Minus, Trash2, CheckCircle, ShoppingCart, Package } from 'lucide-react';
+
+const PAYMENT_TOLERANCE = 0.01;
 
 export const NewSale: React.FC = () => {
   const [tours, setTours] = useState<Tour[]>([]);
@@ -13,29 +15,27 @@ export const NewSale: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showCart, setShowCart] = useState(false);
 
-  // Payment State
   const [method1, setMethod1] = useState<PaymentMethod>('DINHEIRO');
   const [value1, setValue1] = useState<string>('');
   const [method2, setMethod2] = useState<PaymentMethod | null>(null);
   
-  useEffect(() => {
-    loadTours();
-  }, []);
-
-  const loadTours = async () => {
+  const loadTours = useCallback(async () => {
     try {
       const data = await getTours();
       setTours(data);
     } catch (error) {
       console.error('Failed to load tours', error);
     }
-  };
+  }, []);
 
-  const addToCart = (tour: Tour, audienceType: 'adult' | 'child' | 'native') => {
+  useEffect(() => {
+    loadTours();
+  }, [loadTours]);
+
+  const addToCart = useCallback((tour: Tour, audienceType: 'adult' | 'child' | 'native') => {
     setCart(prev => {
       const existing = prev.find(i => i.tourId === tour.id);
       if (existing) {
-        // Incrementa a quantidade do público selecionado
         return prev.map(item => {
           if (item.tourId === tour.id) {
             return {
@@ -49,7 +49,6 @@ export const NewSale: React.FC = () => {
         });
       }
       
-      // Adiciona novo item ao carrinho
       return [...prev, {
         tourId: tour.id,
         tourName: tour.name,
@@ -62,15 +61,14 @@ export const NewSale: React.FC = () => {
         priceNative: tour.price_native
       }];
     });
-  };
+  }, []);
 
-  const updateQty = (index: number, type: 'qtyAdult' | 'qtyChild' | 'qtyNative', delta: number) => {
+  const updateQty = useCallback((index: number, type: 'qtyAdult' | 'qtyChild' | 'qtyNative', delta: number) => {
     setCart(prev => {
       const newCart = [...prev];
       const newVal = newCart[index][type] + delta;
       if (newVal >= 0) newCart[index][type] = newVal;
       
-      // Remove do carrinho se todas as quantidades forem 0
       const item = newCart[index];
       if (item.qtyAdult === 0 && item.qtyChild === 0 && item.qtyNative === 0) {
         return newCart.filter((_, i) => i !== index);
@@ -78,11 +76,11 @@ export const NewSale: React.FC = () => {
       
       return newCart;
     });
-  };
+  }, []);
 
-  const removeFromCart = (index: number) => {
+  const removeFromCart = useCallback((index: number) => {
     setCart(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
 
   const cartTotal = useMemo(() => {
     return cart.reduce((acc, item) => {
@@ -94,13 +92,13 @@ export const NewSale: React.FC = () => {
     return cart.reduce((acc, item) => acc + item.qtyAdult + item.qtyChild + item.qtyNative, 0);
   }, [cart]);
 
-  const handleFinishSale = async () => {
+  const handleFinishSale = useCallback(async () => {
     if (cartTotal === 0) return;
     
     const v1 = parseFloat(value1) || 0;
     const v2 = method2 ? (cartTotal - v1) : 0;
 
-    if (Math.abs((v1 + v2) - cartTotal) > 0.01) {
+    if (Math.abs((v1 + v2) - cartTotal) > PAYMENT_TOLERANCE) {
       alert("A soma dos pagamentos não bate com o total.");
       return;
     }
@@ -125,13 +123,19 @@ export const NewSale: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [cart, cartTotal, method1, value1, method2]);
 
-  // Tela de Pagamento
-  if (paymentStep) {
+  const goToCart = useCallback(() => {
+    setValue1(cartTotal.toFixed(2));
+    setPaymentStep(true);
+  }, [cartTotal]);
+
+  const remaining = useMemo(() => {
     const v1 = parseFloat(value1) || 0;
-    const remaining = Math.max(0, cartTotal - v1);
+    return Math.max(0, cartTotal - v1);
+  }, [cartTotal, value1]);
 
+  if (paymentStep) {
     return (
       <Layout>
         <div className="space-y-6 animate-in slide-in-from-right duration-300">
@@ -200,7 +204,6 @@ export const NewSale: React.FC = () => {
     );
   }
 
-  // Tela do Carrinho
   if (showCart) {
     return (
       <Layout>
@@ -218,60 +221,13 @@ export const NewSale: React.FC = () => {
           ) : (
             <div className="space-y-4 pb-32">
               {cart.map((item, idx) => (
-                <div key={idx} className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
-                        {item.tourIcon || '🌴'}
-                      </div>
-                      <div>
-                        <h3 className="font-bold dark:text-white leading-tight">{item.tourName}</h3>
-                        <p className="text-xs text-gray-500">Subtotal: R$ {
-                          ((item.qtyAdult * item.priceAdult) + (item.qtyChild * item.priceChild) + (item.qtyNative * item.priceNative)).toFixed(2)
-                        }</p>
-                      </div>
-                    </div>
-                    <button onClick={() => removeFromCart(idx)} className="text-red-400 p-1">
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
-                    {item.priceAdult > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm dark:text-gray-300 w-20">Adulto</span>
-                        <span className="text-xs text-gray-500">R$ {item.priceAdult.toFixed(2)}</span>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => updateQty(idx, 'qtyAdult', -1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Minus className="w-4 h-4" /></button>
-                          <span className="w-6 text-center font-medium dark:text-white">{item.qtyAdult}</span>
-                          <button onClick={() => updateQty(idx, 'qtyAdult', 1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Plus className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {item.priceChild > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm dark:text-gray-300 w-20">Criança</span>
-                        <span className="text-xs text-gray-500">R$ {item.priceChild.toFixed(2)}</span>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => updateQty(idx, 'qtyChild', -1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Minus className="w-4 h-4" /></button>
-                          <span className="w-6 text-center font-medium dark:text-white">{item.qtyChild}</span>
-                          <button onClick={() => updateQty(idx, 'qtyChild', 1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Plus className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                    {item.priceNative > 0 && (
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm dark:text-gray-300 w-20">Nativo</span>
-                        <span className="text-xs text-gray-500">R$ {item.priceNative.toFixed(2)}</span>
-                        <div className="flex items-center gap-3">
-                          <button onClick={() => updateQty(idx, 'qtyNative', -1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Minus className="w-4 h-4" /></button>
-                          <span className="w-6 text-center font-medium dark:text-white">{item.qtyNative}</span>
-                          <button onClick={() => updateQty(idx, 'qtyNative', 1)} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center"><Plus className="w-4 h-4" /></button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <CartItemCard 
+                  key={idx}
+                  item={item}
+                  index={idx}
+                  onUpdateQty={updateQty}
+                  onRemove={removeFromCart}
+                />
               ))}
             </div>
           )}
@@ -280,10 +236,7 @@ export const NewSale: React.FC = () => {
             <div className="max-w-lg mx-auto">
               <Button 
                 fullWidth
-                onClick={() => {
-                  setValue1(cartTotal.toFixed(2));
-                  setPaymentStep(true);
-                }} 
+                onClick={goToCart}
                 disabled={cart.length === 0}
               >
                 Finalizar R$ {cartTotal.toFixed(2)} <CheckCircle className="w-5 h-5 ml-1" />
@@ -295,7 +248,6 @@ export const NewSale: React.FC = () => {
     );
   }
 
-  // Tela Principal - Grid de Produtos
   return (
     <Layout>
       <div className="space-y-6 pb-24">
@@ -333,7 +285,6 @@ export const NewSale: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Cart Button */}
       {cart.length > 0 && (
         <div className="fixed bottom-4 left-4 right-4 z-10">
           <div className="max-w-lg mx-auto bg-purple-600 text-white p-4 rounded-2xl shadow-2xl flex justify-between items-center">
@@ -351,17 +302,19 @@ export const NewSale: React.FC = () => {
   );
 };
 
-// Componente do Card de Produto
 interface ProductCardProps {
   tour: Tour;
   onAddToCart: (tour: Tour, audienceType: 'adult' | 'child' | 'native') => void;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
+const ProductCard: React.FC<ProductCardProps> = React.memo(({ tour, onAddToCart }) => {
+  const handleAddAdult = useCallback(() => onAddToCart(tour, 'adult'), [tour, onAddToCart]);
+  const handleAddChild = useCallback(() => onAddToCart(tour, 'child'), [tour, onAddToCart]);
+  const handleAddNative = useCallback(() => onAddToCart(tour, 'native'), [tour, onAddToCart]);
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm p-4">
       <div className="flex flex-col lg:flex-row items-center lg:justify-between gap-3">
-        {/* Div 1: Informações do Produto */}
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-2xl flex-shrink-0">
             {tour.icon || '🌴'}
@@ -372,24 +325,23 @@ const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
           </div>
         </div>
         
-        {/* Div 2: Botões de Público */}
         <div className="flex items-center justify-center gap-2 flex-wrap lg:flex-nowrap flex-shrink-0">
           <button
-            onClick={() => onAddToCart(tour, 'adult')}
+            onClick={handleAddAdult}
             className="flex items-center gap-1.5 py-2 px-3 bg-blue-50 dark:bg-blue-900/20 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-all text-sm font-medium text-blue-900 dark:text-blue-300 whitespace-nowrap"
           >
             <span>👨</span>
             <span>Adulto</span>
           </button>
           <button
-            onClick={() => onAddToCart(tour, 'child')}
+            onClick={handleAddChild}
             className="flex items-center gap-1.5 py-2 px-3 bg-green-50 dark:bg-green-900/20 rounded-full hover:bg-green-100 dark:hover:bg-green-900/30 transition-all text-sm font-medium text-green-900 dark:text-green-300 whitespace-nowrap"
           >
             <span>👶</span>
             <span>Criança</span>
           </button>
           <button
-            onClick={() => onAddToCart(tour, 'native')}
+            onClick={handleAddNative}
             className="flex items-center gap-1.5 py-2 px-3 bg-amber-50 dark:bg-amber-900/20 rounded-full hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-all text-sm font-medium text-amber-900 dark:text-amber-300 whitespace-nowrap"
           >
             <span>🏝️</span>
@@ -399,4 +351,101 @@ const ProductCard: React.FC<ProductCardProps> = ({ tour, onAddToCart }) => {
       </div>
     </div>
   );
-};
+});
+
+ProductCard.displayName = 'ProductCard';
+
+interface CartItemCardProps {
+  item: CartItem;
+  index: number;
+  onUpdateQty: (index: number, type: 'qtyAdult' | 'qtyChild' | 'qtyNative', delta: number) => void;
+  onRemove: (index: number) => void;
+}
+
+const CartItemCard: React.FC<CartItemCardProps> = React.memo(({ item, index, onUpdateQty, onRemove }) => {
+  const subtotal = useMemo(() => 
+    (item.qtyAdult * item.priceAdult) + (item.qtyChild * item.priceChild) + (item.qtyNative * item.priceNative),
+    [item]
+  );
+
+  const handleRemove = useCallback(() => onRemove(index), [index, onRemove]);
+
+  return (
+    <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl shadow-sm space-y-4">
+      <div className="flex justify-between items-start">
+        <div className="flex gap-3">
+          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg">
+            {item.tourIcon || '🌴'}
+          </div>
+          <div>
+            <h3 className="font-bold dark:text-white leading-tight">{item.tourName}</h3>
+            <p className="text-xs text-gray-500">Subtotal: R$ {subtotal.toFixed(2)}</p>
+          </div>
+        </div>
+        <button onClick={handleRemove} className="text-red-400 p-1">
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl">
+        {item.priceAdult > 0 && (
+          <QuantityControl
+            label="Adulto"
+            price={item.priceAdult}
+            quantity={item.qtyAdult}
+            onDecrease={() => onUpdateQty(index, 'qtyAdult', -1)}
+            onIncrease={() => onUpdateQty(index, 'qtyAdult', 1)}
+          />
+        )}
+        {item.priceChild > 0 && (
+          <QuantityControl
+            label="Criança"
+            price={item.priceChild}
+            quantity={item.qtyChild}
+            onDecrease={() => onUpdateQty(index, 'qtyChild', -1)}
+            onIncrease={() => onUpdateQty(index, 'qtyChild', 1)}
+          />
+        )}
+        {item.priceNative > 0 && (
+          <QuantityControl
+            label="Nativo"
+            price={item.priceNative}
+            quantity={item.qtyNative}
+            onDecrease={() => onUpdateQty(index, 'qtyNative', -1)}
+            onIncrease={() => onUpdateQty(index, 'qtyNative', 1)}
+          />
+        )}
+      </div>
+    </div>
+  );
+});
+
+CartItemCard.displayName = 'CartItemCard';
+
+interface QuantityControlProps {
+  label: string;
+  price: number;
+  quantity: number;
+  onDecrease: () => void;
+  onIncrease: () => void;
+}
+
+const QuantityControl: React.FC<QuantityControlProps> = React.memo(({ label, price, quantity, onDecrease, onIncrease }) => {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-sm dark:text-gray-300 w-20">{label}</span>
+      <span className="text-xs text-gray-500">R$ {price.toFixed(2)}</span>
+      <div className="flex items-center gap-3">
+        <button onClick={onDecrease} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center">
+          <Minus className="w-4 h-4" />
+        </button>
+        <span className="w-6 text-center font-medium dark:text-white">{quantity}</span>
+        <button onClick={onIncrease} className="w-8 h-8 rounded-full bg-white dark:bg-gray-700 shadow flex items-center justify-center">
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+});
+
+QuantityControl.displayName = 'QuantityControl';

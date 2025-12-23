@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -12,11 +12,7 @@ export const Tours: React.FC = () => {
   const [currentTour, setCurrentTour] = useState<Partial<Tour>>({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getTours();
@@ -26,14 +22,18 @@ export const Tours: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const handleEdit = (tour?: Tour) => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleEdit = useCallback((tour?: Tour) => {
     setCurrentTour(tour || { name: '', type: '', price_adult: 0, price_child: 0, price_native: 0, icon: '🌴', active: true });
     setIsEditing(true);
-  };
+  }, []);
 
-  const handleSave = async () => {
+  const handleSave = useCallback(async () => {
     try {
       await saveTour(currentTour);
       setIsEditing(false);
@@ -41,9 +41,9 @@ export const Tours: React.FC = () => {
     } catch (e) {
       alert("Erro ao salvar");
     }
-  };
+  }, [currentTour, loadData]);
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!window.confirm("Desativar este passeio?")) return;
     try {
       await deleteTour(id);
@@ -51,7 +51,11 @@ export const Tours: React.FC = () => {
     } catch (e) {
       alert("Erro ao remover");
     }
-  };
+  }, [loadData]);
+
+  const updateTourField = useCallback((field: keyof Tour, value: string | number) => {
+    setCurrentTour(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   if (isEditing) {
     return (
@@ -62,42 +66,42 @@ export const Tours: React.FC = () => {
           <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm space-y-4">
              <Input 
                 label="Nome do Passeio" 
-                value={currentTour.name} 
-                onChange={e => setCurrentTour({...currentTour, name: e.target.value})} 
+                value={currentTour.name || ''} 
+                onChange={e => updateTourField('name', e.target.value)} 
              />
              <Input 
                 label="Tipo (Ex: Lancha, Trilha)" 
-                value={currentTour.type} 
-                onChange={e => setCurrentTour({...currentTour, type: e.target.value})} 
+                value={currentTour.type || ''} 
+                onChange={e => updateTourField('type', e.target.value)} 
              />
              <div className="flex gap-4">
                <Input 
                   label="Ícone (Emoji)" 
-                  value={currentTour.icon} 
-                  onChange={e => setCurrentTour({...currentTour, icon: e.target.value})} 
+                  value={currentTour.icon || ''} 
+                  onChange={e => updateTourField('icon', e.target.value)} 
                   className="text-center text-2xl"
                />
-               <div className="flex-1"></div>
+               <div className="flex-1" />
              </div>
 
              <div className="grid grid-cols-3 gap-3">
                <Input 
                   label="Preço Adulto" 
                   type="number" 
-                  value={currentTour.price_adult} 
-                  onChange={e => setCurrentTour({...currentTour, price_adult: parseFloat(e.target.value)})} 
+                  value={currentTour.price_adult || 0} 
+                  onChange={e => updateTourField('price_adult', parseFloat(e.target.value))} 
                />
                <Input 
                   label="Preço Criança" 
                   type="number" 
-                  value={currentTour.price_child} 
-                  onChange={e => setCurrentTour({...currentTour, price_child: parseFloat(e.target.value)})} 
+                  value={currentTour.price_child || 0} 
+                  onChange={e => updateTourField('price_child', parseFloat(e.target.value))} 
                />
                <Input 
                   label="Preço Nativo" 
                   type="number" 
-                  value={currentTour.price_native} 
-                  onChange={e => setCurrentTour({...currentTour, price_native: parseFloat(e.target.value)})} 
+                  value={currentTour.price_native || 0} 
+                  onChange={e => updateTourField('price_native', parseFloat(e.target.value))} 
                />
              </div>
           </div>

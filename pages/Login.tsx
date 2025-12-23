@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabaseClient';
 import { Sparkles, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, ResponsiveContainer, Cell } from 'recharts';
 
-const chartData = [
+const CHART_DATA = [
   { name: 'S1', value: 40 },
   { name: 'S2', value: 65 },
   { name: 'S3', value: 45 },
@@ -27,14 +27,13 @@ const Login = () => {
     setIsMounted(true);
   }, []);
 
-  // Redireciona usuários já autenticados
   useEffect(() => {
     if (!authLoading && user) {
       navigate('/new-sale');
     }
   }, [user, authLoading, navigate]);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -45,15 +44,15 @@ const Login = () => {
       });
       
       if (error) throw error;
-      // O redirecionamento acontecerá automaticamente via useEffect
-    } catch (err: any) {
-      setError(err.message || "Credenciais inválidas. Tente novamente.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Credenciais inválidas. Tente novamente.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  };
+  }, [email, password]);
 
-  const loginWithGoogle = async () => {
+  const loginWithGoogle = useCallback(async () => {
     setError('');
     setLoading(true);
     try {
@@ -65,13 +64,22 @@ const Login = () => {
       });
       
       if (error) throw error;
-    } catch (err: any) {
-      setError(err.message || "Falha ao fazer login com Google.");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Falha ao fazer login com Google.";
+      setError(errorMessage);
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Loading state enquanto verifica autenticação
+  const chartCells = useMemo(() => 
+    CHART_DATA.map((entry, index) => (
+      <Cell 
+        key={`cell-${index}`} 
+        fill={index === 3 ? '#820ad1' : 'rgba(255,255,255,0.1)'} 
+      />
+    )), []
+  );
+
   if (authLoading) {
     return (
       <div className="min-h-screen w-full bg-[#050505] flex items-center justify-center">
@@ -119,9 +127,9 @@ const Login = () => {
               </button>
 
               <div className="my-8 flex items-center gap-4">
-                <div className="h-[1px] flex-1 bg-white/5"></div>
+                <div className="h-[1px] flex-1 bg-white/5" />
                 <span className="text-[10px] uppercase tracking-[0.2em] text-white/20 font-bold">ou</span>
-                <div className="h-[1px] flex-1 bg-white/5"></div>
+                <div className="h-[1px] flex-1 bg-white/5" />
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
@@ -134,6 +142,7 @@ const Login = () => {
                     placeholder="Digite seu e-mail"
                     required
                     disabled={loading}
+                    autoComplete="email"
                   />
                   <input
                     type="password"
@@ -143,6 +152,7 @@ const Login = () => {
                     placeholder="Sua senha"
                     required
                     disabled={loading}
+                    autoComplete="current-password"
                   />
                 </div>
                 
@@ -166,9 +176,10 @@ const Login = () => {
               src="https://images.unsplash.com/photo-1557804506-669a67965ba0?q=80&w=2074&auto=format&fit=crop" 
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 opacity-60" 
               alt="Success" 
+              loading="lazy"
             />
             
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
 
             <div className="absolute bottom-10 left-10 right-10 bg-black/40 backdrop-blur-2xl border border-white/10 p-8 rounded-[32px] shadow-2xl transform transition-all duration-500 hover:-translate-y-2">
               <div className="flex items-center justify-between mb-8">
@@ -184,14 +195,9 @@ const Login = () => {
               <div className="h-[140px] w-full min-h-[140px]">
                 {isMounted && (
                   <ResponsiveContainer width="100%" height={140} minWidth={0} minHeight={140}>
-                    <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                    <BarChart data={CHART_DATA} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                       <Bar dataKey="value" radius={[6, 6, 6, 6]}>
-                        {chartData.map((entry, index) => (
-                          <Cell 
-                            key={`cell-${index}`} 
-                            fill={index === 3 ? '#820ad1' : 'rgba(255,255,255,0.1)'} 
-                          />
-                        ))}
+                        {chartCells}
                       </Bar>
                     </BarChart>
                   </ResponsiveContainer>

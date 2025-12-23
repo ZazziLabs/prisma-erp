@@ -2,6 +2,7 @@ import { supabase, isConfigured } from '../lib/supabaseClient';
 import { Tour, Sale, SaleItem, DailyClosing, CartItem, PaymentMethod } from '../types';
 import { handleError } from '../lib/errorHandler';
 
+
 // Tours
 export const getTours = async (): Promise<Tour[]> => {
   if (!isConfigured) return [];
@@ -15,8 +16,10 @@ export const getTours = async (): Promise<Tour[]> => {
   return data || [];
 };
 
+
 export const saveTour = async (tour: Partial<Tour>): Promise<Tour | undefined> => {
   if (!isConfigured) handleError(new Error("Database not configured"));
+
 
   const tourData = { ...tour };
   if (!tourData.id) {
@@ -34,11 +37,13 @@ export const saveTour = async (tour: Partial<Tour>): Promise<Tour | undefined> =
   }
 };
 
+
 export const deleteTour = async (id: string): Promise<void> => {
     if (!isConfigured) handleError(new Error("Database not configured"));
     const { error } = await supabase.from('tours').update({ active: false }).eq('id', id);
     if (error) handleError(error);
 };
+
 
 // Sales
 export const createSale = async (cart: CartItem[], payments: { method1: PaymentMethod, value1: number, method2: PaymentMethod | null, value2: number | null }): Promise<Sale | undefined> => {
@@ -54,8 +59,10 @@ export const createSale = async (cart: CartItem[], payments: { method1: PaymentM
     payment_value_2: payments.value2,
   }]).select().single();
 
+
   if (saleError) handleError(saleError);
   if (!saleData) handleError(new Error("Failed to create sale"));
+
 
   const items = cart.map(item => ({
     sale_id: saleData.id,
@@ -68,6 +75,7 @@ export const createSale = async (cart: CartItem[], payments: { method1: PaymentM
     unit_price_native: item.priceNative
   }));
 
+
   const { error: itemsError } = await supabase.from('sale_items').insert(items);
   if (itemsError) {
     await supabase.from('sales').delete().eq('id', saleData.id);
@@ -77,8 +85,10 @@ export const createSale = async (cart: CartItem[], payments: { method1: PaymentM
   return saleData;
 };
 
+
 export const getTodaySales = async (): Promise<Sale[]> => {
   if (!isConfigured) return [];
+
 
   const today = new Date().toISOString().split('T')[0];
   const { data, error } = await supabase
@@ -92,8 +102,10 @@ export const getTodaySales = async (): Promise<Sale[]> => {
   return data || [];
 };
 
+
 export const getSalesByDate = async (date: string): Promise<Sale[]> => {
   if (!isConfigured) return [];
+
 
   const { data, error } = await supabase
     .from('sales')
@@ -105,50 +117,88 @@ export const getSalesByDate = async (date: string): Promise<Sale[]> => {
   return data || [];
 };
 
-// Closing
-export const closeDay = async (summary: Omit<DailyClosing, 'id' | 'created_at'>): Promise<void> => {
-   if (!isConfigured) {
-     throw new Error("Database not configured");
-   }
 
-   // Check if already closed - usa maybeSingle para evitar erro em registros não encontrados
-   const { data: existing, error: existingError } = await supabase
-     .from('daily_closings')
-     .select('id')
-     .eq('date', summary.date)
-     .maybeSingle();
-   
-   if (existingError) {
-      throw new Error(`Erro ao verificar fechamento: ${existingError.message}`);
-   }
-   
-   if (existing) {
-     throw new Error("O caixa para esta data já foi fechado.");
-   }
+// **NOVA FUNÇÃO**: Verifica se o dia já foi fechado
+export const checkIfDayIsClosed = async (date: string): Promise<boolean> => {
+  if (!isConfigured) return false;
+  
+  const { data, error } = await supabase
+    .from('daily_closings')
+    .select('id')
+    .eq('date', date)
+    .maybeSingle();
 
-   // Obtém o usuário autenticado
-   const { data: { user } } = await supabase.auth.getUser();
-   
-   if (!user) {
-     throw new Error("Usuário não autenticado");
-   }
+  if (error && error.code !== 'PGRST116') {
+    console.error('Erro ao verificar fechamento:', error);
+    return false;
+  }
 
-   // Insere com user_id
-   const { error } = await supabase.from('daily_closings').insert([{
-     ...summary,
-     user_id: user.id
-   }]);
-   
-   if (error) {
-     console.error('Insert error:', error);
-     throw new Error(`Erro ao fechar caixa: ${error.message}`);
-   }
+  return !!data;
 };
 
+
+// Closing
+export const closeDay = async (summary: Omit<DailyClosing, 'id' | 'created_at'>): Promise<void> => {
+  if (!isConfigured) {
+    throw new Error("Banco de dados não configurado");
+  }
+
+  // Check if already closed
+  const { data: existing, error: existingError } = await supabase
+    .from('daily_closings')
+    .select('id')
+    .eq('date', summary.date)
+    .maybeSingle();
+  
+  if (existingError && existingError.code !== 'PGRST116') {
+    console.error('Erro ao verificar fechamento:', existingError);
+    throw new Error(`Erro ao verificar fechamento: ${existingError.message}`);
+  }
+  
+  if (existing) {
+    throw new Error("O caixa para esta data já foi fechado.");
+  }
+
+  // Obtém o usuário autenticado
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError) {
+    console.error('Erro ao obter usuário:', userError);
+    throw new Error(`Erro de autenticação: ${userError.message}`);
+  }
+  
+  if (!user) {
+    throw new Error("Usuário não autenticado");
+  }
+
+  // Insere com user_id
+  const { data: insertedData, error: insertError } = await supabase
+    .from('daily_closings')
+    .insert([{
+      ...summary,
+      user_id: user.id
+    }])
+    .select()
+    .single();
+  
+  if (insertError) {
+    console.error('Erro ao inserir fechamento:', insertError);
+    throw new Error(`Erro ao fechar caixa: ${insertError.message}`);
+  }
+
+  if (!insertedData) {
+    throw new Error("Falha ao confirmar fechamento do caixa");
+  }
+
+  // Sucesso - não lança erro
+  console.log('Caixa fechado com sucesso:', insertedData);
+};
+
+
 export const getClosings = async (): Promise<DailyClosing[]> => {
-    if (!isConfigured) return [];
-    
-    const { data, error } = await supabase.from('daily_closings').select('*').order('date', { ascending: false });
-    if (error) handleError(error);
-    return data || [];
+  if (!isConfigured) return [];
+  
+  const { data, error } = await supabase.from('daily_closings').select('*').order('date', { ascending: false });
+  if (error) handleError(error);
+  return data || [];
 };

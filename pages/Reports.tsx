@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Layout } from '../components/Layout';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getClosings } from '../services/api';
@@ -11,15 +11,14 @@ interface WeekData {
   date: string;
 }
 
+const DAY_NAMES = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+const FULL_DAY_NAMES = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+
 export const Reports: React.FC = () => {
   const [closings, setClosings] = useState<DailyClosing[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const data = await getClosings();
@@ -29,36 +28,36 @@ export const Reports: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  // Pega os últimos 7 dias de fechamentos
-  const getLast7Days = (): WeekData[] => {
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const weekData = useMemo((): WeekData[] => {
     const last7 = closings.slice(0, 7).reverse();
     
     return last7.map(closing => {
       const date = new Date(closing.date);
-      const dayNames = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
       
       return {
-        name: dayNames[date.getDay()],
+        name: DAY_NAMES[date.getDay()],
         total: closing.total_amount,
         date: closing.date
       };
     });
-  };
+  }, [closings]);
 
-  // Calcula ticket médio
-  const getAverageTicket = (): number => {
+  const averageTicket = useMemo((): number => {
     if (closings.length === 0) return 0;
     
     const totalSales = closings.reduce((acc, c) => acc + c.sale_count, 0);
     const totalAmount = closings.reduce((acc, c) => acc + c.total_amount, 0);
     
     return totalSales > 0 ? totalAmount / totalSales : 0;
-  };
+  }, [closings]);
 
-  // Encontra o melhor dia da semana
-  const getBestDay = (): string => {
+  const bestDay = useMemo((): string => {
     if (closings.length === 0) return '-';
     
     const dayTotals: Record<string, number> = {
@@ -71,11 +70,9 @@ export const Reports: React.FC = () => {
       'Sábado': 0
     };
     
-    const dayNames = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
-    
     closings.forEach(closing => {
       const date = new Date(closing.date);
-      const dayName = dayNames[date.getDay()];
+      const dayName = FULL_DAY_NAMES[date.getDay()];
       dayTotals[dayName] += closing.total_amount;
     });
     
@@ -90,23 +87,25 @@ export const Reports: React.FC = () => {
     });
     
     return bestDay;
-  };
+  }, [closings]);
 
-  // Calcula total geral
-  const getTotalRevenue = (): number => {
-    return closings.reduce((acc, c) => acc + c.total_amount, 0);
-  };
+  const totalRevenue = useMemo(() => 
+    closings.reduce((acc, c) => acc + c.total_amount, 0), [closings]
+  );
 
-  // Calcula total de vendas
-  const getTotalSales = (): number => {
-    return closings.reduce((acc, c) => acc + c.sale_count, 0);
-  };
+  const totalSales = useMemo(() => 
+    closings.reduce((acc, c) => acc + c.sale_count, 0), [closings]
+  );
 
-  const weekData = getLast7Days();
-  const averageTicket = getAverageTicket();
-  const bestDay = getBestDay();
-  const totalRevenue = getTotalRevenue();
-  const totalSales = getTotalSales();
+  const paymentTotals = useMemo(() => {
+    const last30 = closings.slice(0, 30);
+    return {
+      cash: last30.reduce((acc, c) => acc + c.total_cash, 0),
+      pix: last30.reduce((acc, c) => acc + c.total_pix, 0),
+      debit: last30.reduce((acc, c) => acc + c.total_debit, 0),
+      credit: last30.reduce((acc, c) => acc + c.total_credit, 0),
+    };
+  }, [closings]);
 
   if (loading) {
     return (
@@ -148,7 +147,6 @@ export const Reports: React.FC = () => {
           </button>
         </div>
 
-        {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
             <p className="text-sm opacity-90 font-medium mb-2">Faturamento Total</p>
@@ -187,7 +185,6 @@ export const Reports: React.FC = () => {
           </div>
         </div>
 
-        {/* Gráfico de Vendas da Semana */}
         {weekData.length > 0 && (
           <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
             <div className="flex justify-between items-center mb-6">
@@ -236,7 +233,6 @@ export const Reports: React.FC = () => {
           </div>
         )}
 
-        {/* Breakdown por Método de Pagamento - Últimos 30 dias */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800">
           <h3 className="font-semibold text-gray-700 dark:text-gray-300 mb-4">
             Métodos de Pagamento (Últimos {Math.min(closings.length, 30)} dias)
@@ -247,7 +243,7 @@ export const Reports: React.FC = () => {
                 Dinheiro
               </p>
               <p className="text-2xl font-bold text-green-800 dark:text-green-200">
-                R$ {closings.slice(0, 30).reduce((acc, c) => acc + c.total_cash, 0).toFixed(2)}
+                R$ {paymentTotals.cash.toFixed(2)}
               </p>
             </div>
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
@@ -255,7 +251,7 @@ export const Reports: React.FC = () => {
                 Pix
               </p>
               <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">
-                R$ {closings.slice(0, 30).reduce((acc, c) => acc + c.total_pix, 0).toFixed(2)}
+                R$ {paymentTotals.pix.toFixed(2)}
               </p>
             </div>
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
@@ -263,7 +259,7 @@ export const Reports: React.FC = () => {
                 Débito
               </p>
               <p className="text-2xl font-bold text-purple-800 dark:text-purple-200">
-                R$ {closings.slice(0, 30).reduce((acc, c) => acc + c.total_debit, 0).toFixed(2)}
+                R$ {paymentTotals.debit.toFixed(2)}
               </p>
             </div>
             <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl">
@@ -271,7 +267,7 @@ export const Reports: React.FC = () => {
                 Crédito
               </p>
               <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">
-                R$ {closings.slice(0, 30).reduce((acc, c) => acc + c.total_credit, 0).toFixed(2)}
+                R$ {paymentTotals.credit.toFixed(2)}
               </p>
             </div>
           </div>
