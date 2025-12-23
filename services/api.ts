@@ -106,12 +106,19 @@ export const getTodaySales = async (): Promise<Sale[]> => {
 export const getSalesByDate = async (date: string): Promise<Sale[]> => {
   if (!isConfigured) return [];
 
+  // Ajusta a data para garantir que a consulta pegue o dia inteiro no fuso horário local
+  const startDate = new Date(date);
+  startDate.setUTCHours(0, 0, 0, 0);
+
+  const endDate = new Date(date);
+  endDate.setUTCHours(23, 59, 59, 999);
 
   const { data, error } = await supabase
     .from('sales')
-    .select('*, sale_items(*, tours(name))')
-    .gte('created_at', `${date}T00:00:00`)
-    .lte('created_at', `${date}T23:59:59`);
+    .select('*, sale_items(*, tours(name, icon))') // Adicionado 'icon'
+    .gte('created_at', startDate.toISOString())
+    .lte('created_at', endDate.toISOString())
+    .order('created_at', { ascending: false });
   
   if (error) handleError(error);
   return data || [];
@@ -159,24 +166,11 @@ export const closeDay = async (summary: Omit<DailyClosing, 'id' | 'created_at'>)
     throw new Error("O caixa para esta data já foi fechado.");
   }
 
-  // Obtém o usuário autenticado
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError) {
-    console.error('Erro ao obter usuário:', userError);
-    throw new Error(`Erro de autenticação: ${userError.message}`);
-  }
-  
-  if (!user) {
-    throw new Error("Usuário não autenticado");
-  }
-
   // Insere com user_id
   const { data: insertedData, error: insertError } = await supabase
     .from('daily_closings')
     .insert([{
-      ...summary,
-      user_id: user.id
+      ...summary
     }])
     .select()
     .single();

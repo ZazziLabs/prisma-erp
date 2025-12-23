@@ -33,6 +33,10 @@ export interface SaleItem {
   unit_price_adult: number;
   unit_price_child: number;
   unit_price_native: number;
+  tours?: { // Adicionado para o join
+    name: string;
+    icon: string;
+  }
 }
 
 export interface Sale {
@@ -44,6 +48,7 @@ export interface Sale {
   payment_method_2: PaymentMethod | null;
   payment_value_2: number | null;
   status: 'COMPLETED'; // Simplified for this scope
+  sale_items?: SaleItem[]; // Adicionado para o join
 }
 
 export interface DailyClosing {
