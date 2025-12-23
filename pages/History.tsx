@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Layout } from '../components/Layout';
-import { DailyClosing, Sale, SaleItem } from '../types';
+import { DailyClosing, Sale } from '../types';
 import { getClosings, getSalesByDate } from '../services/api';
-import { Calendar, ChevronDown, ChevronRight, Loader2, Package, TrendingUp } from 'lucide-react';
+import { Calendar, ChevronDown, ChevronRight, Loader2, TrendingUp, Users, User, Baby, Mountain } from 'lucide-react';
 
 interface TourSalesSummary {
   name: string;
   icon: string;
-  quantity: number;
+  qty_adult: number;
+  qty_child: number;
+  qty_native: number;
   totalValue: number;
 }
 
@@ -57,15 +59,23 @@ export const History: React.FC = () => {
           const tourIcon = item.tours?.icon || '📦';
           
           if (!tourSummary[tourId]) {
-            tourSummary[tourId] = { name: tourName, icon: tourIcon, quantity: 0, totalValue: 0 };
+            tourSummary[tourId] = { 
+              name: tourName, 
+              icon: tourIcon, 
+              qty_adult: 0,
+              qty_child: 0,
+              qty_native: 0,
+              totalValue: 0 
+            };
           }
           
-          const qty = item.qty_adult + item.qty_child + item.qty_native;
           const value = (item.qty_adult * item.unit_price_adult) + 
                         (item.qty_child * item.unit_price_child) + 
                         (item.qty_native * item.unit_price_native);
           
-          tourSummary[tourId].quantity += qty;
+          tourSummary[tourId].qty_adult += item.qty_adult;
+          tourSummary[tourId].qty_child += item.qty_child;
+          tourSummary[tourId].qty_native += item.qty_native;
           tourSummary[tourId].totalValue += value;
         });
       });
@@ -124,7 +134,7 @@ export const History: React.FC = () => {
                      <span className="text-gray-500">Carregando detalhes...</span>
                    </div>
                 )}
-                {!loadingDetails && details && <ClosingDetails details={details} />}
+                {!loadingDetails && details && <ClosingDetailsComponent details={details} />}
               </div>
             )}
           </div>
@@ -138,28 +148,56 @@ export const History: React.FC = () => {
   );
 };
 
-const ClosingDetails: React.FC<{ details: ClosingDetails }> = ({ details }) => {
+const ClosingDetailsComponent: React.FC<{ details: ClosingDetails }> = ({ details }) => {
   if (details.sales.length === 0) {
     return <p className="text-center text-gray-500 py-4">Nenhuma venda registrada neste dia.</p>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 font-medium">
         <TrendingUp className="w-4 h-4" />
-        <span>Resumo do dia</span>
+        <span>Resumo de Produtos Vendidos</span>
       </div>
 
       <div className="space-y-3">
         {details.summary.map(item => (
-          <div key={item.name} className="flex items-center justify-between p-3 bg-white dark:bg-gray-700/50 rounded-lg">
-            <div className="flex items-center gap-3">
-              <span className="text-lg">{item.icon}</span>
-              <span className="font-medium dark:text-gray-200">{item.name}</span>
+          <div key={item.name} className="bg-white dark:bg-gray-700/50 rounded-xl shadow-sm overflow-hidden">
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl w-10 h-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 rounded-full">{item.icon}</span>
+                <div>
+                  <p className="font-bold dark:text-white">{item.name}</p>
+                  <p className="text-sm font-bold text-purple-600 dark:text-purple-400">R$ {item.totalValue.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="font-bold dark:text-white">R$ {item.totalValue.toFixed(2)}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{item.quantity} {item.quantity === 1 ? 'unidade' : 'unidades'}</p>
+
+            <div className="bg-gray-100 dark:bg-gray-800 px-4 py-3 border-t border-gray-200 dark:border-gray-700/50">
+               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 font-semibold mb-2">
+                 <Users className="w-4 h-4" />
+                 <span>PÚBLICO ATENDIDO</span>
+               </div>
+               <div className="grid grid-cols-3 gap-2 text-center">
+                  {item.qty_adult > 0 && (
+                    <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded-md">
+                      <p className="text-sm font-bold text-blue-800 dark:text-blue-200">{item.qty_adult}</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-300">Adultos</p>
+                    </div>
+                  )}
+                  {item.qty_child > 0 && (
+                    <div className="bg-green-50 dark:bg-green-900/30 p-2 rounded-md">
+                      <p className="text-sm font-bold text-green-800 dark:text-green-200">{item.qty_child}</p>
+                      <p className="text-xs text-green-600 dark:text-green-300">Crianças</p>
+                    </div>
+                  )}
+                  {item.qty_native > 0 && (
+                    <div className="bg-amber-50 dark:bg-amber-900/30 p-2 rounded-md">
+                      <p className="text-sm font-bold text-amber-800 dark:text-amber-200">{item.qty_native}</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-300">Nativos</p>
+                    </div>
+                  )}
+               </div>
             </div>
           </div>
         ))}
